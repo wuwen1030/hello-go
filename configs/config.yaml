@@ -1,0 +1,13 @@
+server:
+  port: 8080
+  mode: debug  # debug or release
+
+database:
+  driver: mysql
+  host: localhost
+  port: 3306
+  username: root
+  password: 
+  dbname: cms_db
+  max_idle_conns: 10
+  max_open_conns: 100 
