@@ -3,9 +3,15 @@ package main
 import (
 	"log"
 
+	_ "github.com/wuwen/hello-go/docs"
 	"github.com/wuwen/hello-go/internal/app"
 )
 
+// @title        CMS API
+// @version      1.0
+// @description  A simple CMS system API
+// @host         localhost:8080
+// @BasePath     /api/v1
 func main() {
 	app := app.New()
 

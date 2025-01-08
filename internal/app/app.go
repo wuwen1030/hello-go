@@ -13,6 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/wuwen/hello-go/internal/handler"
 	"github.com/wuwen/hello-go/internal/model"
 	"github.com/wuwen/hello-go/internal/pkg/config"
@@ -82,6 +84,10 @@ func (a *App) setupDependencies(db *gorm.DB) {
 }
 
 func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler) {
+	// swagger
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	routerGroup := r.Group("/api/v1")
 	// 注册所有路由
 	routers := []router.Router{
 		api.NewHealthRouter(),
@@ -90,7 +96,7 @@ func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler)
 
 	// 统一注册路由
 	for _, router := range routers {
-		router.Register(r.Group("/api/v1"))
+		router.Register(routerGroup)
 	}
 }
 

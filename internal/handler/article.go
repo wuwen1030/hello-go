@@ -17,6 +17,16 @@ func NewArticleHandler(svc *service.ArticleService) *ArticleHandler {
 	return &ArticleHandler{svc: svc}
 }
 
+// @Summary     Create article
+// @Description Create a new article
+// @Tags        articles
+// @Accept      json
+// @Produce     json
+// @Param       article body     service.CreateArticleRequest true "Article info"
+// @Success     200    {object} response.Response{data=model.Article}
+// @Failure     400    {object} response.Response
+// @Failure     500    {object} response.Response
+// @Router      /articles [post]
 func (h *ArticleHandler) Create(c *gin.Context) {
 	var req service.CreateArticleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -38,6 +48,16 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 	response.Success(c, article)
 }
 
+// @Summary     Get article
+// @Description Get article by ID
+// @Tags        articles
+// @Accept      json
+// @Produce     json
+// @Param       id  path     int true "Article ID"
+// @Success     200 {object} response.Response{data=model.Article}
+// @Failure     404 {object} response.Response
+// @Failure     500 {object} response.Response
+// @Router      /articles/{id} [get]
 func (h *ArticleHandler) Get(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -59,6 +79,16 @@ func (h *ArticleHandler) Get(c *gin.Context) {
 	response.Success(c, article)
 }
 
+// @Summary     List articles
+// @Description Get articles with pagination
+// @Tags        articles
+// @Accept      json
+// @Produce     json
+// @Param       page      query    int false "Page number"
+// @Param       page_size query    int false "Page size"
+// @Success     200      {object} response.Response{data=response.ListResponse{items=[]model.Article}}
+// @Failure     500      {object} response.Response
+// @Router      /articles [get]
 func (h *ArticleHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
@@ -75,6 +105,18 @@ func (h *ArticleHandler) List(c *gin.Context) {
 	})
 }
 
+// @Summary     Update article
+// @Description Update article by ID
+// @Tags        articles
+// @Accept      json
+// @Produce     json
+// @Param       id      path     int                      true "Article ID"
+// @Param       article body     service.UpdateArticleRequest true "Article info"
+// @Success     200    {object} response.Response{data=model.Article}
+// @Failure     400    {object} response.Response
+// @Failure     404    {object} response.Response
+// @Failure     500    {object} response.Response
+// @Router      /articles/{id} [put]
 func (h *ArticleHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -102,6 +144,16 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 	response.Success(c, article)
 }
 
+// @Summary     Delete article
+// @Description Delete article by ID
+// @Tags        articles
+// @Accept      json
+// @Produce     json
+// @Param       id  path     int true "Article ID"
+// @Success     200 {object} response.Response
+// @Failure     404 {object} response.Response
+// @Failure     500 {object} response.Response
+// @Router      /articles/{id} [delete]
 func (h *ArticleHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
