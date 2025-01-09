@@ -120,22 +120,13 @@ func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler,
 	authGroup.Use(middleware.AuthMiddleware())
 
 	// 公开路由
-	publicRouters := []router.Router{
+	routers := []router.Router{
 		api.NewHealthRouter(),
 		api.NewUserRouter(userHandler),
-	}
-
-	// 认证路由
-	authRouters := []router.Router{
 		api.NewArticleRouter(articleHandler),
 	}
-
-	// 注册路由
-	for _, r := range publicRouters {
-		r.Register(publicGroup)
-	}
-	for _, r := range authRouters {
-		r.Register(authGroup)
+	for _, r := range routers {
+		r.Register(publicGroup, authGroup)
 	}
 }
 

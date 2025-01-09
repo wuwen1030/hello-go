@@ -15,11 +15,14 @@ func NewUserRouter(handler *handler.UserHandler) *UserRouter {
 	}
 }
 
-func (r *UserRouter) Register(group *gin.RouterGroup) {
-	users := group.Group("/users")
+func (r *UserRouter) Register(publicGroup *gin.RouterGroup, privateGroup *gin.RouterGroup) {
+	authUsers := privateGroup.Group("/users")
 	{
-		users.POST("/register", r.handler.Register)
-		users.POST("/login", r.handler.Login)
-		users.PUT("/:id", r.handler.Update)
+		authUsers.PUT("/:id", r.handler.Update)
+	}
+	publicUsers := publicGroup.Group("/users")
+	{
+		publicUsers.POST("/register", r.handler.Register)
+		publicUsers.POST("/login", r.handler.Login)
 	}
 }

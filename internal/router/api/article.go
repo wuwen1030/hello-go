@@ -15,14 +15,17 @@ func NewArticleRouter(handler *handler.ArticleHandler) *ArticleRouter {
 	}
 }
 
-func (r *ArticleRouter) Register(group *gin.RouterGroup) {
-	articles := group.Group("/articles")
+func (r *ArticleRouter) Register(publicGroup *gin.RouterGroup, privateGroup *gin.RouterGroup) {
+	authArticles := privateGroup.Group("/articles")
 	{
 		// 所有接口都需要认证，因为使用的是 authGroup
-		articles.POST("", r.handler.Create)
-		articles.GET("/:id", r.handler.Get)
-		articles.GET("", r.handler.List)
-		articles.PUT("/:id", r.handler.Update)
-		articles.DELETE("/:id", r.handler.Delete)
+		authArticles.POST("", r.handler.Create)
+		authArticles.PUT("/:id", r.handler.Update)
+		authArticles.DELETE("/:id", r.handler.Delete)
+	}
+	publicArticles := publicGroup.Group("/articles")
+	{
+		publicArticles.GET("/:id", r.handler.Get)
+		publicArticles.GET("", r.handler.List)
 	}
 }
