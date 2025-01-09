@@ -49,9 +49,14 @@ func (a *App) Initialize() error {
 	gin.SetMode(cfg.Server.Mode)
 
 	// 初始化数据库
-	db, err := database.NewDBClient(&cfg.Database)
+	dbClient, err := database.NewDBClient(&cfg.Database)
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
+	}
+
+	db, err := dbClient.GetDB()
+	if err != nil {
+		return fmt.Errorf("failed to get database: %v", err)
 	}
 
 	// 自动迁移数据库表
