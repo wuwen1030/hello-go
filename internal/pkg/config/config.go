@@ -1,12 +1,15 @@
 package config
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 )
 
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
+	JWT      JWTConfig      `mapstructure:"jwt"`
 }
 
 type ServerConfig struct {
@@ -23,6 +26,11 @@ type DatabaseConfig struct {
 	DBName       string `mapstructure:"dbname"`
 	MaxIdleConns int    `mapstructure:"max_idle_conns"`
 	MaxOpenConns int    `mapstructure:"max_open_conns"`
+}
+
+type JWTConfig struct {
+	Secret     string        `mapstructure:"secret"`
+	ExpireTime time.Duration `mapstructure:"expire_time"`
 }
 
 func LoadConfig(path string) (*Config, error) {

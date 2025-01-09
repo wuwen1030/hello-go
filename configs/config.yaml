@@ -11,3 +11,7 @@ database:
   dbname: cms_db
   max_idle_conns: 10
   max_open_conns: 100 
+
+jwt:
+  secret: "your-secret-key"
+  expire_time: 24h 
