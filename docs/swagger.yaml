@@ -3,19 +3,61 @@ definitions:
   model.Article:
     properties:
       content:
+        example: 文章内容
         type: string
       created_at:
+        example: "2024-07-20T10:00:00Z"
         type: string
       id:
+        example: 1
         type: integer
       status:
         description: 1:draft 2:published
+        example: 1
         type: integer
       title:
+        example: 文章标题
         type: string
       updated_at:
+        example: "2024-07-20T10:00:00Z"
         type: string
     type: object
+  model.User:
+    properties:
+      created_at:
+        example: "2024-07-20T10:00:00Z"
+        type: string
+      email:
+        example: test@example.com
+        type: string
+      id:
+        example: 1
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/model.UserStatus'
+        example: 1
+      updated_at:
+        example: "2024-07-20T10:00:00Z"
+        type: string
+      username:
+        example: testuser
+        type: string
+    type: object
+  model.UserStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-comments:
+      UserStatusActive: '1: 已激活'
+      UserStatusBanned: '2: 已封禁'
+      UserStatusInactive: '0: 未激活'
+    x-enum-varnames:
+    - UserStatusInactive
+    - UserStatusActive
+    - UserStatusBanned
   response.ListResponse:
     properties:
       items: {}
@@ -36,6 +78,40 @@ definitions:
         type: string
       title:
         type: string
+    type: object
+  service.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  service.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  service.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 50
+        minLength: 6
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    - username
     type: object
   service.UpdateArticleRequest:
     properties:
@@ -232,4 +308,74 @@ paths:
       summary: Update article
       tags:
       - articles
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password
+      parameters:
+      - description: Login info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/service.LoginResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Login user
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/service.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Register user
+      tags:
+      - users
 swagger: "2.0"
