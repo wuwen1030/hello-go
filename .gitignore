@@ -32,3 +32,6 @@ bin/
 
 # macOS specific
 .DS_Store
+
+# Swagger generated files
+docs/ 
