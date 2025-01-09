@@ -39,4 +39,26 @@ func (a *Auth) GenerateToken(userID uint) (string, error) {
 	return token.SignedString([]byte(a.config.Secret))
 }
 
+// Claims JWT 载荷
+type Claims struct {
+	UserID uint `json:"user_id"`
+	jwt.StandardClaims
+}
+
+func (a *Auth) ParseToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(a.config.Secret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, jwt.ErrSignatureInvalid
+}
+
 // ... 其他方法

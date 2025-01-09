@@ -57,6 +57,11 @@ func (a *App) Initialize() error {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 
+	// user
+	if err := db.AutoMigrate(&model.User{}); err != nil {
+		return fmt.Errorf("failed to migrate database: %v", err)
+	}
+
 	// 初始化依赖
 	a.setupDependencies(db)
 
@@ -67,13 +72,18 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	// 创建 gin 引擎
 	r := gin.Default()
 
-	// 初始化依赖
+	// article
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
 
+	// user
+	userRepo := repository.NewUserRepository(db)
+	userService := service.NewUserService(userRepo)
+	userHandler := handler.NewUserHandler(userService)
+
 	// 注册路由
-	a.setupRoutes(r, articleHandler)
+	a.setupRoutes(r, articleHandler, userHandler)
 
 	// 创建 HTTP 服务器
 	a.router = r
@@ -83,7 +93,7 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	}
 }
 
-func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler) {
+func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler, userHandler *handler.UserHandler) {
 	// swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -92,6 +102,7 @@ func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler)
 	routers := []router.Router{
 		api.NewHealthRouter(),
 		api.NewArticleRouter(articleHandler),
+		api.NewUserRouter(userHandler),
 	}
 
 	// 统一注册路由
