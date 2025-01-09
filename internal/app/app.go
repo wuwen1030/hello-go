@@ -77,6 +77,12 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	// 创建 gin 引擎
 	r := gin.Default()
 
+	// 应用中间件
+	r.Use(middleware.LoggerMiddleware())
+	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.CorsMiddleware())
+	r.Use(middleware.LimiterMiddleware(time.Second, 100)) // 每秒最多 100 个请求
+
 	// article
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
