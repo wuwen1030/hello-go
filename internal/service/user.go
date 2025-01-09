@@ -60,7 +60,7 @@ func (s *UserService) Register(req *RegisterRequest) (*model.User, error) {
 		Username: req.Username,
 		Password: hashedPassword,
 		Email:    req.Email,
-		Status:   1, // active
+		Status:   model.UserStatusActive,
 	}
 
 	if err := s.repo.Create(user); err != nil {

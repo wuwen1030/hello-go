@@ -1,13 +1,24 @@
 package auth
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte("your-secret-key") // 在实际应用中应该从配置中读取
+var (
+	jwtSecret   []byte
+	tokenExpire time.Duration
+)
+
+// Initialize 初始化认证配置
+func Initialize(secret string, expire time.Duration) {
+	jwtSecret = []byte(secret)
+	tokenExpire = expire
+}
 
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -19,36 +30,30 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
-type Claims struct {
-	UserID uint `json:"user_id"`
-	jwt.StandardClaims
-}
-
 func GenerateToken(userID uint) (string, error) {
-	claims := Claims{
-		UserID: userID,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
+	claims := jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(tokenExpire).Unix(),
+		IssuedAt:  time.Now().Unix(),
+		Subject:   fmt.Sprint(userID),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+func ParseToken(tokenString string) (uint, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+	if claims, ok := token.Claims.(*jwt.StandardClaims); ok && token.Valid {
+		userID, _ := strconv.ParseUint(claims.Subject, 10, 32)
+		return uint(userID), nil
 	}
 
-	return nil, jwt.ErrSignatureInvalid
+	return 0, jwt.ErrSignatureInvalid
 }

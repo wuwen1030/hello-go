@@ -16,7 +16,9 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/wuwen/hello-go/internal/handler"
+	"github.com/wuwen/hello-go/internal/middleware"
 	"github.com/wuwen/hello-go/internal/model"
+	"github.com/wuwen/hello-go/internal/pkg/auth"
 	"github.com/wuwen/hello-go/internal/pkg/config"
 	"github.com/wuwen/hello-go/internal/pkg/database"
 	"github.com/wuwen/hello-go/internal/repository"
@@ -62,6 +64,9 @@ func (a *App) Initialize() error {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 
+	// 初始化认证
+	auth.Initialize(a.config.JWT.Secret, a.config.JWT.ExpireTime)
+
 	// 初始化依赖
 	a.setupDependencies(db)
 
@@ -93,21 +98,33 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	}
 }
 
-func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler, userHandler *handler.UserHandler) {
+func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler,
+	userHandler *handler.UserHandler) {
 	// swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	routerGroup := r.Group("/api/v1")
-	// 注册所有路由
-	routers := []router.Router{
+	// 分组路由
+	publicGroup := r.Group("/api/v1")
+	authGroup := r.Group("/api/v1")
+	authGroup.Use(middleware.AuthMiddleware())
+
+	// 公开路由
+	publicRouters := []router.Router{
 		api.NewHealthRouter(),
-		api.NewArticleRouter(articleHandler),
 		api.NewUserRouter(userHandler),
 	}
 
-	// 统一注册路由
-	for _, router := range routers {
-		router.Register(routerGroup)
+	// 认证路由
+	authRouters := []router.Router{
+		api.NewArticleRouter(articleHandler),
+	}
+
+	// 注册路由
+	for _, r := range publicRouters {
+		r.Register(publicGroup)
+	}
+	for _, r := range authRouters {
+		r.Register(authGroup)
 	}
 }
 

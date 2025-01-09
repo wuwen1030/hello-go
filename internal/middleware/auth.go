@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wuwen/hello-go/internal/auth"
+	"github.com/wuwen/hello-go/internal/pkg/auth"
 	"github.com/wuwen/hello-go/internal/pkg/response"
 )
 
-func AuthMiddleware(auth *auth.Auth) gin.HandlerFunc {
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -25,7 +25,7 @@ func AuthMiddleware(auth *auth.Auth) gin.HandlerFunc {
 			return
 		}
 
-		claims, err := auth.ParseToken(parts[1])
+		userID, err := auth.ParseToken(parts[1])
 		if err != nil {
 			response.Error(c, http.StatusUnauthorized, "invalid or expired token")
 			c.Abort()
@@ -33,7 +33,7 @@ func AuthMiddleware(auth *auth.Auth) gin.HandlerFunc {
 		}
 
 		// 将用户ID保存到上下文
-		c.Set("userID", claims.UserID)
+		c.Set("userID", userID)
 		c.Next()
 	}
 }
