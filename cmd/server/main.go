@@ -10,8 +10,12 @@ import (
 // @title        CMS API
 // @version      1.0
 // @description  A simple CMS system API
-// @host         localhost:8080
-// @BasePath     /api/v1
+// @host        localhost:8080
+// @BasePath    /api/v1
+// @securityDefinitions.apiKey BearerAuth
+// @in header
+// @name Authorization
+// @type apiKey
 func main() {
 	app := app.New()
 

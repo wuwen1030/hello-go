@@ -26,6 +26,7 @@ func NewArticleHandler(svc *service.ArticleService) *ArticleHandler {
 // @Success     200    {object} response.Response{data=model.Article}
 // @Failure     400    {object} response.Response
 // @Failure     500    {object} response.Response
+// @Security    BearerAuth
 // @Router      /articles [post]
 func (h *ArticleHandler) Create(c *gin.Context) {
 	var req service.CreateArticleRequest
@@ -57,6 +58,7 @@ func (h *ArticleHandler) Create(c *gin.Context) {
 // @Success     200 {object} response.Response{data=model.Article}
 // @Failure     404 {object} response.Response
 // @Failure     500 {object} response.Response
+// @Security    BearerAuth
 // @Router      /articles/{id} [get]
 func (h *ArticleHandler) Get(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -116,6 +118,7 @@ func (h *ArticleHandler) List(c *gin.Context) {
 // @Failure     400    {object} response.Response
 // @Failure     404    {object} response.Response
 // @Failure     500    {object} response.Response
+// @Security    BearerAuth
 // @Router      /articles/{id} [put]
 func (h *ArticleHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -153,6 +156,7 @@ func (h *ArticleHandler) Update(c *gin.Context) {
 // @Success     200 {object} response.Response
 // @Failure     404 {object} response.Response
 // @Failure     500 {object} response.Response
+// @Security    BearerAuth
 // @Router      /articles/{id} [delete]
 func (h *ArticleHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

@@ -90,6 +90,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 // @Failure     400  {object} response.Response
 // @Failure     404  {object} response.Response
 // @Failure     500  {object} response.Response
+// @Security    BearerAuth
 // @Router      /users/{id} [put]
 func (h *UserHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

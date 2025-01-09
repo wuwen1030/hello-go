@@ -203,6 +203,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Create article
       tags:
       - articles
@@ -232,6 +234,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Delete article
       tags:
       - articles
@@ -265,6 +269,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Get article
       tags:
       - articles
@@ -308,6 +314,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Update article
       tags:
       - articles
@@ -352,6 +360,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
       summary: Update user
       tags:
       - users
@@ -425,4 +435,9 @@ paths:
       summary: Register user
       tags:
       - users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

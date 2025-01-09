@@ -85,6 +85,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new article",
                 "consumes": [
                     "application/json"
@@ -143,6 +148,11 @@ const docTemplate = `{
         },
         "/articles/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get article by ID",
                 "consumes": [
                     "application/json"
@@ -197,6 +207,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update article by ID",
                 "consumes": [
                     "application/json"
@@ -266,6 +281,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete article by ID",
                 "consumes": [
                     "application/json"
@@ -426,6 +446,11 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update user info",
                 "consumes": [
                     "application/json"
@@ -679,6 +704,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

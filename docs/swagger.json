@@ -79,6 +79,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new article",
                 "consumes": [
                     "application/json"
@@ -137,6 +142,11 @@
         },
         "/articles/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get article by ID",
                 "consumes": [
                     "application/json"
@@ -191,6 +201,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update article by ID",
                 "consumes": [
                     "application/json"
@@ -260,6 +275,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Delete article by ID",
                 "consumes": [
                     "application/json"
@@ -420,6 +440,11 @@
         },
         "/users/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update user info",
                 "consumes": [
                     "application/json"
@@ -673,6 +698,13 @@
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
