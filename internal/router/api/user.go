@@ -20,5 +20,6 @@ func (r *UserRouter) Register(group *gin.RouterGroup) {
 	{
 		users.POST("/register", r.handler.Register)
 		users.POST("/login", r.handler.Login)
+		users.PUT("/:id", r.handler.Update)
 	}
 }

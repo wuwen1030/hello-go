@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/wuwen/hello-go/internal/model"
 	"github.com/wuwen/hello-go/internal/pkg/auth"
@@ -9,10 +10,9 @@ import (
 )
 
 var (
-	ErrUserExists   = errors.New("user already exists")
-	ErrInvalidAuth  = errors.New("invalid username or password")
 	ErrUserNotFound = errors.New("user not found")
-	ErrInvalidEmail = errors.New("invalid email format")
+	ErrInvalidAuth  = errors.New("invalid username or password")
+	ErrUserExist    = errors.New("user already exists")
 )
 
 type UserService struct {
@@ -24,8 +24,8 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 }
 
 type RegisterRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=50"`
-	Password string `json:"password" binding:"required,min=6,max=50"`
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
 }
 
@@ -39,44 +39,38 @@ type LoginResponse struct {
 	User  *model.User `json:"user"`
 }
 
+type UpdateRequest struct {
+	Email    string `json:"email" binding:"omitempty,email"`
+	Password string `json:"password" binding:"omitempty"`
+}
+
 func (s *UserService) Register(req *RegisterRequest) (*model.User, error) {
-	// 检查用户是否已存在
-	if _, err := s.repo.GetByUsername(req.Username); err == nil {
-		return nil, ErrUserExists
-	}
-
-	// 检查邮箱是否已被使用
-	if _, err := s.repo.GetByEmail(req.Email); err == nil {
-		return nil, ErrUserExists
-	}
-
-	// 创建新用户
-	hashedPassword, err := auth.HashPassword(req.Password)
-	if err != nil {
-		return nil, err
+	// check if user exists
+	_, err := s.repo.FindByUsername(req.Username)
+	if err == nil {
+		return nil, ErrUserExist
 	}
 
 	user := &model.User{
 		Username: req.Username,
-		Password: hashedPassword,
 		Email:    req.Email,
 		Status:   model.UserStatusActive,
 	}
 
-	if err := s.repo.Create(user); err != nil {
+	if err := user.SetPassword(req.Password); err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return s.repo.Create(user)
 }
 
 func (s *UserService) Login(req *LoginRequest) (*LoginResponse, error) {
-	user, err := s.repo.GetByUsername(req.Username)
+	user, err := s.repo.FindByUsername(req.Username)
 	if err != nil {
 		return nil, ErrInvalidAuth
 	}
 
-	if !auth.CheckPassword(req.Password, user.Password) {
+	if !user.ValidatePassword(req.Password) {
 		return nil, ErrInvalidAuth
 	}
 
@@ -90,4 +84,25 @@ func (s *UserService) Login(req *LoginRequest) (*LoginResponse, error) {
 		Token: token,
 		User:  user,
 	}, nil
+}
+
+func (s *UserService) UpdateUser(id uint, req *UpdateRequest) (*model.User, error) {
+	user, err := s.repo.FindById(id)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	if req.Email != "" {
+		user.Email = req.Email
+	}
+
+	if req.Password != "" {
+		if err := user.SetPassword(req.Password); err != nil {
+			return nil, err
+		}
+	}
+
+	user.UpdatedAt = time.Now()
+
+	return s.repo.Update(user)
 }
