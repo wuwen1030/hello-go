@@ -1,0 +1,37 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+
+# Go specific
+*.test
+*.out
+/vendor/
+
+# Dependency directories
+/dist/
+
+# Environment files
+.env
+*.env
+
+# Log files
+*.log
+
+# Database files
+*.db
+
+# macOS specific
+.DS_Store
+
+# Swagger generated files
+docs/ 
