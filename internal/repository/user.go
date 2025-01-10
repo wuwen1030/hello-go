@@ -42,3 +42,18 @@ func (r *UserRepository) Update(user *model.User) (*model.User, error) {
 	}
 	return user, nil
 }
+
+func (r *UserRepository) FindByRoleID(roleID uint) ([]*model.User, error) {
+	var users []*model.User
+	if err := r.db.Where("role_id = ?", roleID).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (r *UserRepository) UpdateRole(user *model.User) (*model.User, error) {
+	if err := r.db.Save(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
+}

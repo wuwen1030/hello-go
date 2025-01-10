@@ -10,11 +10,12 @@ import (
 )
 
 type UserHandler struct {
-	svc *service.UserService
+	svc     *service.UserService
+	roleSvc *service.RoleService
 }
 
-func NewUserHandler(svc *service.UserService) *UserHandler {
-	return &UserHandler{svc: svc}
+func NewUserHandler(svc *service.UserService, roleSvc *service.RoleService) *UserHandler {
+	return &UserHandler{svc: svc, roleSvc: roleSvc}
 }
 
 // @Summary     Register user
@@ -109,6 +110,48 @@ func (h *UserHandler) Update(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case service.ErrUserNotFound:
+			response.Error(c, http.StatusNotFound, err.Error())
+		default:
+			response.Error(c, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+
+	response.Success(c, user)
+}
+
+// @Summary     Update user role
+// @Description Update user role
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       id      path     int  true "User ID"
+// @Param       role_id path     int  true "Role ID"
+// @Success     200     {object} response.Response{data=model.User}
+// @Failure     400     {object} response.Response
+// @Failure     404     {object} response.Response
+// @Failure     500     {object} response.Response
+// @Security    BearerAuth
+// @Router      /users/{id}/roles/{role_id} [put]
+func (h *UserHandler) UpdateRole(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	roleID, err := strconv.ParseUint(c.Param("role_id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid role id")
+		return
+	}
+
+	user, err := h.svc.UpdateUserRole(uint(userID), uint(roleID))
+	if err != nil {
+		switch err {
+		case service.ErrUserNotFound:
+			response.Error(c, http.StatusNotFound, err.Error())
+		case service.ErrRoleNotFound:
 			response.Error(c, http.StatusNotFound, err.Error())
 		default:
 			response.Error(c, http.StatusInternalServerError, "internal server error")

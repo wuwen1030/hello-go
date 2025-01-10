@@ -31,13 +31,15 @@ func (s UserStatus) String() string {
 
 // User 用户模型
 type User struct {
-	ID        uint       `gorm:"primarykey" json:"id" example:"1"`
+	ID        uint       `gorm:"primarykey;autoIncrement" json:"id" example:"1"`
 	CreatedAt time.Time  `json:"created_at" example:"2024-07-20T10:00:00Z"`
 	UpdatedAt time.Time  `json:"updated_at" example:"2024-07-20T10:00:00Z"`
 	Username  string     `gorm:"size:50;not null;uniqueIndex" json:"username" example:"testuser"`
 	Password  string     `gorm:"size:100;not null" json:"-"`
 	Email     string     `gorm:"size:100;uniqueIndex" json:"email" example:"test@example.com"`
 	Status    UserStatus `gorm:"default:1" json:"status" example:"1"`
+	RoleID    uint       `gorm:"default:1" json:"role_id" example:"1"`
+	Role      Role       `gorm:"foreignKey:RoleID;references:ID" json:"role"`
 }
 
 // ValidatePassword 验证密码

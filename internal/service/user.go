@@ -13,14 +13,16 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrInvalidAuth  = errors.New("invalid username or password")
 	ErrUserExist    = errors.New("user already exists")
+	ErrRoleNotFound = errors.New("role not found")
 )
 
 type UserService struct {
-	repo *repository.UserRepository
+	repo     *repository.UserRepository
+	roleRepo *repository.RoleRepository
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{repo: repo}
+func NewUserService(repo *repository.UserRepository, roleRepo *repository.RoleRepository) *UserService {
+	return &UserService{repo: repo, roleRepo: roleRepo}
 }
 
 type RegisterRequest struct {
@@ -105,4 +107,21 @@ func (s *UserService) UpdateUser(id uint, req *UpdateRequest) (*model.User, erro
 	user.UpdatedAt = time.Now()
 
 	return s.repo.Update(user)
+}
+
+func (s *UserService) UpdateUserRole(userID uint, roleID uint) (*model.User, error) {
+	user, err := s.repo.FindById(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	role, err := s.roleRepo.FindByID(roleID)
+	if err != nil {
+		return nil, ErrRoleNotFound
+	}
+
+	user.RoleID = role.ID
+	user.UpdatedAt = time.Now()
+
+	return s.repo.UpdateRole(user)
 }

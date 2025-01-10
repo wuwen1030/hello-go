@@ -60,12 +60,30 @@ func (a *App) Initialize() error {
 	}
 
 	// 自动迁移数据库表
-	if err := db.AutoMigrate(&model.Article{}); err != nil {
+	// 1. 先迁移 Role 表，因为它被 User 表引用
+	if err := db.AutoMigrate(&model.Role{}); err != nil {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 
-	// user
+	// 创建默认角色
+	defaultRole := model.Role{
+		ID:          1,
+		Name:        "user",
+		Permissions: model.Permissions{"article.create", "article.update", "article.delete", "article.read"},
+	}
+	// 如果不存在则创建
+	result := db.FirstOrCreate(&defaultRole, model.Role{ID: 1})
+	if result.Error != nil {
+		return fmt.Errorf("failed to create default role: %v", result.Error)
+	}
+
+	// 2. 再迁移 User 表，因为它依赖 Role 表
 	if err := db.AutoMigrate(&model.User{}); err != nil {
+		return fmt.Errorf("failed to migrate database: %v", err)
+	}
+
+	// 3. 最后迁移其他表
+	if err := db.AutoMigrate(&model.Article{}); err != nil {
 		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 
@@ -88,6 +106,11 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	r.Use(middleware.CorsMiddleware())
 	r.Use(middleware.LimiterMiddleware(time.Second, 100)) // 每秒最多 100 个请求
 
+	// role
+	roleRepo := repository.NewRoleRepository(db)
+	roleService := service.NewRoleService(roleRepo)
+	roleHandler := handler.NewRoleHandler(roleService)
+
 	// article
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
@@ -95,11 +118,11 @@ func (a *App) setupDependencies(db *gorm.DB) {
 
 	// user
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
-	userHandler := handler.NewUserHandler(userService)
+	userService := service.NewUserService(userRepo, roleRepo)
+	userHandler := handler.NewUserHandler(userService, roleService)
 
 	// 注册路由
-	a.setupRoutes(r, articleHandler, userHandler)
+	a.setupRoutes(r, articleHandler, userHandler, roleHandler)
 
 	// 创建 HTTP 服务器
 	a.router = r
@@ -110,7 +133,7 @@ func (a *App) setupDependencies(db *gorm.DB) {
 }
 
 func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler,
-	userHandler *handler.UserHandler) {
+	userHandler *handler.UserHandler, roleHandler *handler.RoleHandler) {
 	// swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -119,10 +142,11 @@ func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler,
 	authGroup := r.Group("/api/v1")
 	authGroup.Use(middleware.AuthMiddleware())
 
-	// 公开路由
+	// 路由注册
 	routers := []router.Router{
 		api.NewHealthRouter(),
-		api.NewUserRouter(userHandler),
+		api.NewUserRouter(userHandler, roleHandler),
+		api.NewRoleRouter(roleHandler),
 		api.NewArticleRouter(articleHandler),
 	}
 	for _, r := range routers {

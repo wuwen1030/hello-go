@@ -6,12 +6,14 @@ import (
 )
 
 type UserRouter struct {
-	handler *handler.UserHandler
+	handler     *handler.UserHandler
+	roleHandler *handler.RoleHandler
 }
 
-func NewUserRouter(handler *handler.UserHandler) *UserRouter {
+func NewUserRouter(handler *handler.UserHandler, roleHandler *handler.RoleHandler) *UserRouter {
 	return &UserRouter{
-		handler: handler,
+		handler:     handler,
+		roleHandler: roleHandler,
 	}
 }
 
@@ -19,6 +21,7 @@ func (r *UserRouter) Register(publicGroup *gin.RouterGroup, privateGroup *gin.Ro
 	authUsers := privateGroup.Group("/users")
 	{
 		authUsers.PUT("/:id", r.handler.Update)
+		authUsers.PUT("/:id/roles/:role_id", r.handler.UpdateRole)
 	}
 	publicUsers := publicGroup.Group("/users")
 	{
