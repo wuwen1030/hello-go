@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/wuwen/hello-go/internal/model"
@@ -13,16 +14,20 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrInvalidAuth  = errors.New("invalid username or password")
 	ErrUserExist    = errors.New("user already exists")
-	ErrRoleNotFound = errors.New("role not found")
 )
 
 type UserService struct {
-	repo     *repository.UserRepository
-	roleRepo *repository.RoleRepository
+	repo          *repository.UserRepository
+	roleRepo      *repository.RoleRepository
+	policyService *PolicyService
 }
 
-func NewUserService(repo *repository.UserRepository, roleRepo *repository.RoleRepository) *UserService {
-	return &UserService{repo: repo, roleRepo: roleRepo}
+func NewUserService(repo *repository.UserRepository, roleRepo *repository.RoleRepository, policyService *PolicyService) *UserService {
+	return &UserService{
+		repo:          repo,
+		roleRepo:      roleRepo,
+		policyService: policyService,
+	}
 }
 
 type RegisterRequest struct {
@@ -61,6 +66,11 @@ func (s *UserService) Register(req *RegisterRequest) (*model.User, error) {
 
 	if err := user.SetPassword(req.Password); err != nil {
 		return nil, err
+	}
+
+	// 为新用户分配默认角色
+	if err := s.policyService.AddRoleForUser(user.Username, "user"); err != nil {
+		return nil, fmt.Errorf("failed to assign default role: %v", err)
 	}
 
 	return s.repo.Create(user)
@@ -109,19 +119,35 @@ func (s *UserService) UpdateUser(id uint, req *UpdateRequest) (*model.User, erro
 	return s.repo.Update(user)
 }
 
-func (s *UserService) UpdateUserRole(userID uint, roleID uint) (*model.User, error) {
+func (s *UserService) UpdateUserRole(userID uint, roleID uint) error {
+	// 检查用户是否存在
 	user, err := s.repo.FindById(userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return ErrUserNotFound
 	}
 
+	// 检查角色是否存在
 	role, err := s.roleRepo.FindByID(roleID)
 	if err != nil {
-		return nil, ErrRoleNotFound
+		return errors.New("role not found")
 	}
 
-	user.RoleID = role.ID
-	user.UpdatedAt = time.Now()
+	// 先移除用户的所有角色
+	roles, err := s.policyService.GetRolesForUser(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to get user roles: %v", err)
+	}
 
-	return s.repo.UpdateRole(user)
+	for _, r := range roles {
+		if err := s.policyService.RemoveRoleForUser(user.Username, r); err != nil {
+			return fmt.Errorf("failed to remove role %s: %v", r, err)
+		}
+	}
+
+	// 添加新角色
+	if err := s.policyService.AddRoleForUser(user.Username, role.Name); err != nil {
+		return fmt.Errorf("failed to add role %s: %v", role.Name, err)
+	}
+
+	return nil
 }

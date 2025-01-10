@@ -54,10 +54,10 @@ func (h *RoleHandler) Create(c *gin.Context) {
 // @Tags        roles
 // @Accept      json
 // @Produce     json
-// @Param       id   path     int true "Role ID"
-// @Success     200  {object} response.Response{data=model.Role}
-// @Failure     404  {object} response.Response
-// @Failure     500  {object} response.Response
+// @Param       id  path     int true "Role ID"
+// @Success     200 {object} response.Response{data=model.Role}
+// @Failure     404 {object} response.Response
+// @Failure     500 {object} response.Response
 // @Security    BearerAuth
 // @Router      /roles/{id} [get]
 func (h *RoleHandler) Get(c *gin.Context) {
@@ -82,11 +82,11 @@ func (h *RoleHandler) Get(c *gin.Context) {
 }
 
 // @Summary     Update role
-// @Description Update role by ID
+// @Description Update role info
 // @Tags        roles
 // @Accept      json
 // @Produce     json
-// @Param       id   path     int                  true "Role ID"
+// @Param       id   path     int                    true "Role ID"
 // @Param       role body     service.UpdateRoleRequest true "Role info"
 // @Success     200  {object} response.Response{data=model.Role}
 // @Failure     400  {object} response.Response
@@ -126,10 +126,10 @@ func (h *RoleHandler) Update(c *gin.Context) {
 // @Tags        roles
 // @Accept      json
 // @Produce     json
-// @Param       id   path     int true "Role ID"
-// @Success     200  {object} response.Response
-// @Failure     404  {object} response.Response
-// @Failure     500  {object} response.Response
+// @Param       id  path     int true "Role ID"
+// @Success     200 {object} response.Response
+// @Failure     404 {object} response.Response
+// @Failure     500 {object} response.Response
 // @Security    BearerAuth
 // @Router      /roles/{id} [delete]
 func (h *RoleHandler) Delete(c *gin.Context) {
@@ -139,8 +139,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.svc.Delete(uint(id))
-	if err != nil {
+	if err := h.svc.Delete(uint(id)); err != nil {
 		switch err {
 		case service.ErrRoleNotFound:
 			response.Error(c, http.StatusNotFound, err.Error())

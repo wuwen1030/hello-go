@@ -6,26 +6,27 @@ import (
 )
 
 type UserRouter struct {
-	handler     *handler.UserHandler
-	roleHandler *handler.RoleHandler
+	userHandler *handler.UserHandler
 }
 
-func NewUserRouter(handler *handler.UserHandler, roleHandler *handler.RoleHandler) *UserRouter {
+func NewUserRouter(userHandler *handler.UserHandler) *UserRouter {
 	return &UserRouter{
-		handler:     handler,
-		roleHandler: roleHandler,
+		userHandler: userHandler,
 	}
 }
 
-func (r *UserRouter) Register(publicGroup *gin.RouterGroup, privateGroup *gin.RouterGroup) {
-	authUsers := privateGroup.Group("/users")
+func (r *UserRouter) Register(public, auth *gin.RouterGroup) {
+	// 公开路由组
+	users := public.Group("/users")
 	{
-		authUsers.PUT("/:id", r.handler.Update)
-		authUsers.PUT("/:id/roles/:role_id", r.handler.UpdateRole)
+		users.POST("/register", r.userHandler.Register)
+		users.POST("/login", r.userHandler.Login)
 	}
-	publicUsers := publicGroup.Group("/users")
+
+	// 需要认证的路由组
+	authUsers := auth.Group("/users")
 	{
-		publicUsers.POST("/register", r.handler.Register)
-		publicUsers.POST("/login", r.handler.Login)
+		authUsers.PUT("/:id", r.userHandler.Update)
+		authUsers.PUT("/:id/role", r.userHandler.UpdateUserRole)
 	}
 }

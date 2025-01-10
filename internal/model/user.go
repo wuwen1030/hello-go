@@ -38,8 +38,6 @@ type User struct {
 	Password  string     `gorm:"size:100;not null" json:"-"`
 	Email     string     `gorm:"size:100;uniqueIndex" json:"email" example:"test@example.com"`
 	Status    UserStatus `gorm:"default:1" json:"status" example:"1"`
-	RoleID    uint       `gorm:"default:1" json:"role_id" example:"1"`
-	Role      Role       `gorm:"foreignKey:RoleID;references:ID" json:"role"`
 }
 
 // ValidatePassword 验证密码

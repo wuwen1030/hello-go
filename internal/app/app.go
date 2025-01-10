@@ -10,17 +10,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"gorm.io/gorm"
+
 	"github.com/wuwen/hello-go/internal/handler"
 	"github.com/wuwen/hello-go/internal/middleware"
-	"github.com/wuwen/hello-go/internal/model"
-	"github.com/wuwen/hello-go/internal/pkg/auth"
 	"github.com/wuwen/hello-go/internal/pkg/config"
-	"github.com/wuwen/hello-go/internal/pkg/database"
 	"github.com/wuwen/hello-go/internal/repository"
 	"github.com/wuwen/hello-go/internal/router"
 	"github.com/wuwen/hello-go/internal/router/api"
@@ -28,72 +26,14 @@ import (
 )
 
 type App struct {
-	config *config.Config
-	router *gin.Engine
-	server *http.Server
+	config   *config.Config
+	router   *gin.Engine
+	server   *http.Server
+	enforcer *casbin.Enforcer
 }
 
 func New() *App {
 	return &App{}
-}
-
-func (a *App) Initialize() error {
-	// 加载配置
-	cfg, err := config.LoadConfig("configs/config.yaml")
-	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
-	}
-	a.config = cfg
-
-	// 设置 gin 模式
-	gin.SetMode(cfg.Server.Mode)
-
-	// 初始化数据库
-	dbClient, err := database.NewDBClient(&cfg.Database)
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
-	}
-
-	db, err := dbClient.GetDB()
-	if err != nil {
-		return fmt.Errorf("failed to get database: %v", err)
-	}
-
-	// 自动迁移数据库表
-	// 1. 先迁移 Role 表，因为它被 User 表引用
-	if err := db.AutoMigrate(&model.Role{}); err != nil {
-		return fmt.Errorf("failed to migrate database: %v", err)
-	}
-
-	// 创建默认角色
-	defaultRole := model.Role{
-		ID:          1,
-		Name:        "user",
-		Permissions: model.Permissions{"article.create", "article.update", "article.delete", "article.read"},
-	}
-	// 如果不存在则创建
-	result := db.FirstOrCreate(&defaultRole, model.Role{ID: 1})
-	if result.Error != nil {
-		return fmt.Errorf("failed to create default role: %v", result.Error)
-	}
-
-	// 2. 再迁移 User 表，因为它依赖 Role 表
-	if err := db.AutoMigrate(&model.User{}); err != nil {
-		return fmt.Errorf("failed to migrate database: %v", err)
-	}
-
-	// 3. 最后迁移其他表
-	if err := db.AutoMigrate(&model.Article{}); err != nil {
-		return fmt.Errorf("failed to migrate database: %v", err)
-	}
-
-	// 初始化认证
-	auth.Initialize(a.config.JWT.Secret, a.config.JWT.ExpireTime)
-
-	// 初始化依赖
-	a.setupDependencies(db)
-
-	return nil
 }
 
 func (a *App) setupDependencies(db *gorm.DB) {
@@ -104,22 +44,25 @@ func (a *App) setupDependencies(db *gorm.DB) {
 	r.Use(middleware.LoggerMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
 	r.Use(middleware.CorsMiddleware())
-	r.Use(middleware.LimiterMiddleware(time.Second, 100)) // 每秒最多 100 个请求
+	r.Use(middleware.LimiterMiddleware(time.Second, 100))
 
-	// role
+	// 初始化策略服务
+	policyService := service.NewPolicyService(a.enforcer)
+
+	// 初始化角色服务
 	roleRepo := repository.NewRoleRepository(db)
-	roleService := service.NewRoleService(roleRepo)
+	roleService := service.NewRoleService(roleRepo, policyService)
 	roleHandler := handler.NewRoleHandler(roleService)
 
-	// article
+	// 初始化文章服务
 	articleRepo := repository.NewArticleRepository(db)
 	articleService := service.NewArticleService(articleRepo)
 	articleHandler := handler.NewArticleHandler(articleService)
 
-	// user
+	// 初始化用户服务
 	userRepo := repository.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, roleRepo)
-	userHandler := handler.NewUserHandler(userService, roleService)
+	userService := service.NewUserService(userRepo, roleRepo, policyService)
+	userHandler := handler.NewUserHandler(userService)
 
 	// 注册路由
 	a.setupRoutes(r, articleHandler, userHandler, roleHandler)
@@ -141,11 +84,12 @@ func (a *App) setupRoutes(r *gin.Engine, articleHandler *handler.ArticleHandler,
 	publicGroup := r.Group("/api/v1")
 	authGroup := r.Group("/api/v1")
 	authGroup.Use(middleware.AuthMiddleware())
+	authGroup.Use(middleware.CasbinMiddleware(a.enforcer))
 
 	// 路由注册
 	routers := []router.Router{
 		api.NewHealthRouter(),
-		api.NewUserRouter(userHandler, roleHandler),
+		api.NewUserRouter(userHandler),
 		api.NewRoleRouter(roleHandler),
 		api.NewArticleRouter(articleHandler),
 	}

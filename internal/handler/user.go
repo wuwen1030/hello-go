@@ -10,12 +10,11 @@ import (
 )
 
 type UserHandler struct {
-	svc     *service.UserService
-	roleSvc *service.RoleService
+	svc *service.UserService
 }
 
-func NewUserHandler(svc *service.UserService, roleSvc *service.RoleService) *UserHandler {
-	return &UserHandler{svc: svc, roleSvc: roleSvc}
+func NewUserHandler(svc *service.UserService) *UserHandler {
+	return &UserHandler{svc: svc}
 }
 
 // @Summary     Register user
@@ -146,7 +145,7 @@ func (h *UserHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	user, err := h.svc.UpdateUserRole(uint(userID), uint(roleID))
+	err = h.svc.UpdateUserRole(uint(userID), uint(roleID))
 	if err != nil {
 		switch err {
 		case service.ErrUserNotFound:
@@ -159,5 +158,50 @@ func (h *UserHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, user)
+	response.Success(c, nil)
+}
+
+// UpdateUserRole 更新用户角色
+// @Summary     Update user role
+// @Description Update user role
+// @Tags        users
+// @Accept      json
+// @Produce     json
+// @Param       id   path     int  true "User ID"
+// @Param       role body     UpdateRoleRequest true "Role info"
+// @Success     200  {object} response.Response
+// @Failure     400  {object} response.Response
+// @Failure     404  {object} response.Response
+// @Failure     500  {object} response.Response
+// @Security    BearerAuth
+// @Router      /users/{id}/role [put]
+func (h *UserHandler) UpdateUserRole(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	var req struct {
+		RoleID uint `json:"role_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	if err := h.svc.UpdateUserRole(uint(userID), req.RoleID); err != nil {
+		switch err {
+		case service.ErrUserNotFound:
+			response.Error(c, http.StatusNotFound, "user not found")
+		case service.ErrRoleNotFound:
+			response.Error(c, http.StatusNotFound, "role not found")
+		default:
+			response.Error(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	response.Success(c, nil)
 }
